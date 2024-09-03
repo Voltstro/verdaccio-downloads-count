@@ -10,4 +10,3 @@ export function parseVersionFromTarballFilename(name: string): string | void {
     const version = /.+-(\d.+)\.tgz/.test(name) ? name.match(/.+-(\d.+)\.tgz/)[1] : undefined;
     if (version && semver.valid(version)) return version;
 }
-

@@ -4,16 +4,27 @@ import { DownloadsCountConfig } from './downloadsCountConfig';
 import { parseVersionFromTarballFilename } from './utils';
 import { DbManager } from './dbManager';
 
+/**
+ * Main downloads count middleware
+ */
 export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCountConfig> {
     private readonly logger: Logger;
+    private readonly config: DownloadsCountConfig;
     private readonly dbManager: DbManager;
 
     public constructor(config: Config, options: PluginOptions<DownloadsCountConfig>) {
         this.logger = options.logger;
-        this.dbManager = new DbManager(this.logger, options.config.connectionString);
+        this.config = options.config;
+        this.dbManager = new DbManager(this.logger, this.config.connectionString);
     }
 
     public register_middlewares(app: Application): void {
+        //Migrate DB (if needed)
+        if(this.config.migrate) {
+            void this.dbManager.migrateDb();
+        }
+
+        //Package download handler
         app.use('/:package/-/:filename', async (req, res, next) => {
             //Immediately process the request, we will do everything after
             next();
@@ -29,8 +40,6 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
                 const version = parseVersionFromTarballFilename(fileName);
 
                 await pgClient.query('SELECT public.handle_package_count($1, $2);', [packageName, version]);
-
-                this.logger.info(`Package ${packageName} version ${version} was downloaded.`);
             } catch(ex) {
                 this.logger.error({ ex }, 'An error occurred handling package download count! @{ex}');
             } finally {
