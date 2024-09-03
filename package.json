@@ -1,0 +1,44 @@
+{
+  "name": "verdaccio-downloads-count",
+  "version": "1.0.0",
+  "description": "",
+  "license": "MIT",
+  "author": {
+    "name": "Voltstro",
+    "email": "me@voltstro.dev"
+  },
+  "homepage": "https://github.com/Voltstro/verdaccio-downloads-count",
+  "repository": {
+    "url": "https://github.com/Voltstro/verdaccio-downloads-count",
+    "type": "git"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@verdaccio/commons-api": "^10.2.0",
+    "pg": "^8.12.0",
+    "semver": "^7.6.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^18.0.0",
+    "@types/pg": "^8.11.8",
+    "@types/semver": "^7.5.8",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@verdaccio/types": "^10.8.0",
+    "eslint": "^9.8.0",
+    "rimraf": "5.0.10",
+    "typescript": "^5.5.4"
+  },
+  "scripts": {
+    "build": "rimraf ./lib && tsc"
+  },
+  "files": [
+    "/lib"
+  ],
+  "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
+}
