@@ -1,7 +1,7 @@
 {
   "name": "verdaccio-downloads-count",
   "version": "1.0.0",
-  "description": "",
+  "description": "Tracks daily downloads count for packages. Data is stored in a Postgres database.",
   "license": "MIT",
   "author": {
     "name": "Voltstro",
@@ -12,6 +12,15 @@
     "url": "https://github.com/Voltstro/verdaccio-downloads-count",
     "type": "git"
   },
+  "keywords": [
+    "verdaccio",
+    "plugin",
+    "middleware",
+    "postgres",
+    "pg",
+    "downloads",
+    "downloads count"
+  ],
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "engines": {
@@ -39,7 +48,8 @@
     "build": "rimraf ./lib && tsc"
   },
   "files": [
-    "/lib"
+    "/lib",
+    "/migrations"
   ],
   "packageManager": "yarn@1.22.22+sha1.ac34549e6aa8e7ead463a7407e1c7390f61a6610"
 }

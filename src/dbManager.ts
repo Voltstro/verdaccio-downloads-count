@@ -2,6 +2,7 @@ import { migrate } from 'postgres-migrations';
 import { Logger } from '@verdaccio/types';
 import { Pool, PoolClient } from 'pg';
 import { join } from 'path';
+import { LOGGER_PREFIX } from './constants';
 
 /**
  * Manager for DB connections
@@ -25,11 +26,11 @@ export class DbManager {
         this.connectionCount = 0;
         this.pool.on('acquire', () => {
             this.connectionCount++;
-            this.logger.debug(`Connection acquired from pool. Count: ${this.connectionCount}`);
+            this.logger.debug(`${LOGGER_PREFIX}: Connection acquired from pool. Count: ${this.connectionCount}`);
         });
         this.pool.on('release', () => {
             this.connectionCount--;
-            this.logger.debug(`Connection released back to pool. Count: ${this.connectionCount}`);
+            this.logger.debug(`${LOGGER_PREFIX}: Connection released back to pool. Count: ${this.connectionCount}`);
         });
     }
 
@@ -51,10 +52,10 @@ export class DbManager {
             await migrate({
                 client: pgClient,
             }, migrationsDir, {
-                logger: (msg) => this.logger.info(msg)
+                logger: (msg) => this.logger.info(`${LOGGER_PREFIX} [postgres-migrations]: ${msg}`)
             });
         } catch(ex) {
-            this.logger.error({ ex: ex.message }, 'Error running migrations! @{ex}');
+            this.logger.error({ ex: ex.message }, `${LOGGER_PREFIX}: Error running migrations! @{ex}`);
             throw ex;
         } finally {
             pgClient.release();

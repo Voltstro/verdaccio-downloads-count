@@ -3,6 +3,7 @@ import { Config, IPluginMiddleware, Logger, PluginOptions } from '@verdaccio/typ
 import { DownloadsCountConfig } from './downloadsCountConfig';
 import { parseVersionFromTarballFilename } from './utils';
 import { DbManager } from './dbManager';
+import { LOGGER_PREFIX } from './constants';
 
 /**
  * Main downloads count middleware
@@ -15,7 +16,13 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
     public constructor(config: Config, options: PluginOptions<DownloadsCountConfig>) {
         this.logger = options.logger;
         this.config = options.config;
-        this.dbManager = new DbManager(this.logger, this.config.connectionString);
+
+        let connectionString = this.config.connectionString;
+
+        if(!connectionString)
+            connectionString = process.env.VDC_DB_CONNECTION_STRING as string;
+
+        this.dbManager = new DbManager(this.logger, connectionString);
     }
 
     public register_middlewares(app: Application): void {
@@ -41,12 +48,12 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
 
                 await pgClient.query('SELECT public.handle_package_count($1, $2);', [packageName, version]);
             } catch(ex) {
-                this.logger.error({ ex }, 'An error occurred handling package download count! @{ex}');
+                this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred handling package download count! @{ex}`);
             } finally {
                 pgClient.release();
             }
         });
 
-        this.logger.info('Installed downloads count middleware');
+        this.logger.info(`${LOGGER_PREFIX}: Installed downloads count middleware`);
     }
 }
