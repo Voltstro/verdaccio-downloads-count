@@ -1,7 +1,7 @@
 import { Application } from 'express';
-import { Config, IPluginMiddleware, Logger, PluginOptions } from '@verdaccio/types';
+import { Config, IBasicAuth, IPluginMiddleware, IStorageManager, Logger, PluginOptions } from '@verdaccio/types';
 import { DownloadsCountConfig } from './downloadsCountConfig';
-import { parseVersionFromTarballFilename } from './utils';
+import { getPackageAsync, parseVersionFromTarballFilename } from './utils';
 import { DbManager } from './dbManager';
 import { LOGGER_PREFIX } from './constants';
 
@@ -25,32 +25,47 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
         this.dbManager = new DbManager(this.logger, connectionString);
     }
 
-    public register_middlewares(app: Application): void {
+    public register_middlewares(app: Application, auth: IBasicAuth<Config>, storage: IStorageManager<Config>,): void {
         //Migrate DB (if needed)
         if(this.config.migrate) {
             void this.dbManager.migrateDb();
         }
 
-        //Package download handler
-        app.use('/:package/-/:filename', async (req, res, next) => {
+        app.get('/:package/-/:filename', async (req, res, next) => {
             //Immediately process the request, we will do everything after
             next();
 
-            //Only interested in downloads that were successful
-            if(req.method !== 'GET' && res.statusCode !== 200) return;
-
-            //Handle count with DB
-            const pgClient = await this.dbManager.getConnection();
             try {
                 const packageName = req.params.package;
                 const fileName = req.params.filename;
                 const version = parseVersionFromTarballFilename(fileName);
 
-                await pgClient.query('SELECT public.handle_package_count($1, $2);', [packageName, version]);
+                if(!packageName || !fileName || !version) return;
+
+                const packageDetails = await getPackageAsync(storage, {
+                    name: packageName,
+                    uplinksLook: true,
+                    req,
+                    abbreviated: false
+                });
+
+                if(!packageDetails) {
+                    this.logger.warn({ packageName, version }, `${LOGGER_PREFIX}: Failed getting package @{packageName}, ver: @{version}.`);
+                    return;
+                }
+
+                if(!(version in packageDetails.versions)) return;
+
+                const pgClient = await this.dbManager.getConnection();
+                try {
+                    await pgClient.query('SELECT public.handle_package_count($1, $2);', [packageName, version]);
+                } catch(ex) {
+                    this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred while calling handle package count on the DB! @{ex}`);
+                } finally {
+                    pgClient.release();
+                }
             } catch(ex) {
-                this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred handling package download count! @{ex}`);
-            } finally {
-                pgClient.release();
+                this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred in downloads count middleware!`);
             }
         });
 

@@ -1,6 +1,6 @@
 {
   "name": "verdaccio-downloads-count",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Tracks daily downloads count for packages. Data is stored in a Postgres database.",
   "license": "MIT",
   "author": {
