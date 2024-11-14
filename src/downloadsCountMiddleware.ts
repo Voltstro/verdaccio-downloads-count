@@ -32,15 +32,32 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
         }
 
         app.get('/:package/-/:filename', async (req, res, next) => {
+            //Get package name and file name
+            const packageName = req.params.package;
+            const fileName = req.params.filename;
+
             //Immediately process the request, we will do everything after
             next();
 
+            this.logger.debug(`${LOGGER_PREFIX}: Got request for package download...`);
+
             try {
-                const packageName = req.params.package;
-                const fileName = req.params.filename;
                 const version = parseVersionFromTarballFilename(fileName);
 
-                if(!packageName || !fileName || !version) return;
+                if(!packageName) {
+                    this.logger.debug(`${LOGGER_PREFIX}: No package name was in the query params.`);
+                    return;
+                }
+
+                if(!fileName) {
+                    this.logger.debug(`${LOGGER_PREFIX}: No file name was in the query params.`);
+                    return;
+                }
+
+                if(!version) {
+                    this.logger.debug(`${LOGGER_PREFIX}: Could not get package version.`);
+                    return;
+                }
 
                 const packageDetails = await getPackageAsync(storage, {
                     name: packageName,
@@ -58,6 +75,7 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
 
                 const pgClient = await this.dbManager.getConnection();
                 try {
+                    this.logger.debug(`${LOGGER_PREFIX}: Calling handle_package_count on DB...`);
                     await pgClient.query('SELECT public.handle_package_count($1, $2);', [packageName, version]);
                 } catch(ex) {
                     this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred while calling handle package count on the DB! @{ex}`);
@@ -65,7 +83,7 @@ export class DownloadsCountMiddleware implements IPluginMiddleware<DownloadsCoun
                     pgClient.release();
                 }
             } catch(ex) {
-                this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred in downloads count middleware!`);
+                this.logger.error({ ex }, `${LOGGER_PREFIX}: An error occurred in downloads count middleware! @{ex}`);
             }
         });
 

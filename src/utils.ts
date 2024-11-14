@@ -1,20 +1,20 @@
 import { Config, IStorageManager, Package } from '@verdaccio/types';
-import semver from 'semver';
 
 //Util functions come from verdaccio-install-counts
 //https://github.com/openupm/verdaccio-install-counts/blob/main/src/utils.ts
+
+const semverRegex = /.+-((0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?)\.tgz/;
 
 /**
  * Parse the package version from tarball filename
  * @param {String} name
  * @returns {String}
  */
-export function parseVersionFromTarballFilename(name: string): string | undefined {
-    // @ts-expect-error FIXME: we know the regex is valid, but we should improve this part as ts suggest
-    const version = /.+-(\d.+)\.tgz/.test(name) ? name.match(/.+-(\d.+)\.tgz/)[1] : undefined;
-    if (version && semver.valid(version)) return version;
+export function parseVersionFromTarballFilename(name: string): string | null {
+    if(typeof name !== 'string')
+        throw new Error('\'name\' needs to be typeof string!');
 
-    return undefined;
+    return semverRegex.test(name) ? name.match(semverRegex)![1] : null;
 }
 
 /**
